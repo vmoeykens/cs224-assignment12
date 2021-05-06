@@ -1,5 +1,7 @@
 import java.util.LinkedList;
 
+import jdk.internal.jshell.tool.resources.l10n;
+
 /**
  * @author Vincent Moeykens
  */
@@ -37,10 +39,12 @@ class FordFulkerson {
         DirectedWeightedGraph flows = new DirectedWeightedGraph(G.getNumNodes());
         // Construct a residual graph
         DirectedWeightedGraph residualGraph = constructResidualGraph(G);
-
-        LinkedList<Integer> augmentingPath = findAugmentingPath(residualGraph, 0, 7);
+        int totalFlow = 0;
+        LinkedList<Integer> augmentingPath = findAugmentingPath(residualGraph, s, t);
         while (augmentingPath.peek() != -1) {
-            flows = augment(flows, augmentingPath, residualGraph);
+            DirectedWeightedGraph flowsPrime = augment(flows, augmentingPath, residualGraph);
+            updateResidualGraph(residualGraph, flows, flowsPrime);
+            augmentingPath = findAugmentingPath(residualGraph, s, t);
         }
 
         return 1;
@@ -48,6 +52,18 @@ class FordFulkerson {
 
     DirectedWeightedGraph constructResidualGraph(DirectedWeightedGraph graph) {
         return new DirectedWeightedGraph(graph.getGraph());
+    }
+
+    void updateResidualGraph(DirectedWeightedGraph residualGraph, DirectedWeightedGraph flows, DirectedWeightedGraph flowsPrime) {
+        for (int i = 0; i < residualGraph.getNumNodes(); i++) {
+            for (int j = 0; j < residualGraph.getNumNodes(); j++) {
+                int flowsWeight = flowsPrime.getEdge(i, j);
+                if (flowsWeight > 0) {
+                    residualGraph.modifyEdge(i, j, -flowsWeight);
+                    residualGraph.modifyEdge(j, i, flowsWeight);
+                }
+            }
+        }
     }
     
     /**
@@ -58,11 +74,12 @@ class FordFulkerson {
      */
     int bottleneck(LinkedList<Integer> augmentingPath, DirectedWeightedGraph residualGraph) {
         int bottleneckVal = Integer.MAX_VALUE;
-        for (int i = 0; i < augmentingPath.size() - 2; i++) {
+        for (int i = 0; i < augmentingPath.size() - 1; i++) {
             if (residualGraph.getEdge(augmentingPath.get(i), augmentingPath.get(i + 1)) < bottleneckVal) {
                 bottleneckVal = residualGraph.getEdge(augmentingPath.get(i), augmentingPath.get(i + 1));
             }
         }
+        System.out.println("Flow amount: " + bottleneckVal + "\n");
         return bottleneckVal;
     }
 
@@ -75,7 +92,15 @@ class FordFulkerson {
      */
     DirectedWeightedGraph augment(DirectedWeightedGraph flows, LinkedList<Integer> augmentingPath, DirectedWeightedGraph residualGraph) {
         int b = bottleneck(augmentingPath, residualGraph);
-        return new DirectedWeightedGraph(1);
+        for (int i = 0; i < augmentingPath.size() - 1; i++) {
+            int currentEdgeWeight = residualGraph.getEdge(augmentingPath.get(i), augmentingPath.get(i + 1));
+            if (currentEdgeWeight != 0) {
+                flows.modifyEdge(augmentingPath.get(i), augmentingPath.get(i + 1), b);
+            } else {
+                flows.modifyEdge(augmentingPath.get(i), augmentingPath.get(i + 1), -b);
+            }
+        }
+        return flows;
     }
 
     /**
@@ -129,13 +154,24 @@ class FordFulkerson {
             while (outputPath[start] != -1) {
                 finalPath.push(outputPath[start]);
                 start = outputPath[start];
-            }    
+            }
+            System.out.println("Augmenting path found: ");
+            for (int i = 0; i < finalPath.size(); i++) {
+                if (finalPath.get(i) == s) {
+                    System.out.print("s -> ");
+                } else if (finalPath.get(i) == t) {
+                    System.out.println("t");
+                } else {
+                    System.out.print(finalPath.get(i));
+                    System.out.print(" -> ");
+                }
+            }
             return finalPath;
         }
 
         LinkedList<Integer> result = new LinkedList<Integer>();
         result.push(-1);
- 
+        System.out.println("No augmenting path found!");
         return result;
     }
 }
@@ -163,7 +199,11 @@ class DirectedWeightedGraph {
         return this.graph[source][destination];
     }
 
-    public void modifyEdge(int source, int destination, int newWeight) {
+    public void modifyEdge(int source, int destination, int weightDelta) {
+        this.graph[source][destination] += weightDelta;
+    }
+
+    public void setEdge(int source, int destination, int newWeight) {
         this.graph[source][destination] = newWeight;
     }
 
