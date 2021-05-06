@@ -1,12 +1,12 @@
-import java.util.LinkedList;
-
-
 /**
  * @author Vincent Moeykens
  */
 
+import java.util.LinkedList;
+
 class Main {
     public static void main(String[] args){
+        // Set up our directed, weighted graph
         DirectedWeightedGraph dwGraph = new DirectedWeightedGraph(8);
         dwGraph.addEdge(0, 1, 10);
         dwGraph.addEdge(0, 2, 5);
@@ -24,24 +24,35 @@ class Main {
         dwGraph.addEdge(6, 2, 6);
         dwGraph.addEdge(6, 7, 10);
 
+        // Pick our source and sink nodes
         int s = 0;
         int t = 7;
 
+        // Initialize a ford fulkerson object
         FordFulkerson f = new FordFulkerson();
 
+        // Run the algorithm and get the output residual graph
         DirectedWeightedGraph outputResidualGraph = f.maxFlow(dwGraph, s, t);
 
+        // Calculate the max flow based on the output flow from the sink node in the final residual graph
         int maxFlow = 0;
-
         for (int i = 0; i < outputResidualGraph.getNumNodes(); i++) {
             maxFlow += outputResidualGraph.getEdge(t, i);
         }
- 
+
+        // Display the max flow
         System.out.println("Maximum flow value  = " + maxFlow);
     }
 }
 
 class FordFulkerson {
+    /**
+     * Run the ford fulkerson algorithm
+     * @param G Input graph
+     * @param s Source node
+     * @param t Sink node
+     * @return Final residual graph after running the algorithm
+     */
     public DirectedWeightedGraph maxFlow(DirectedWeightedGraph G, int s, int t) {
         // Construct the flow graph
         DirectedWeightedGraph flows = new DirectedWeightedGraph(G.getNumNodes());
@@ -58,6 +69,11 @@ class FordFulkerson {
         return residualGraph;
     }
 
+    /**
+     * Construct the initial residual graph
+     * @param graph Original graph to build the residual off of
+     * @return Directed weighted residual graph
+     */
     DirectedWeightedGraph constructResidualGraph(DirectedWeightedGraph graph) {
         return new DirectedWeightedGraph(graph.getGraph());
     }
@@ -76,9 +92,9 @@ class FordFulkerson {
     
     /**
      * Determine the value of the bottleneck edge in the augmenting path
-     * @param augmentingPath
-     * @param residualGraph
-     * @return
+     * @param augmentingPath The augmenting path to find the bottleneck of 
+     * @param residualGraph The current residual graph to determine the bottleneck value
+     * @return The current bottlneck value for this augmenting path
      */
     int bottleneck(LinkedList<Integer> augmentingPath, DirectedWeightedGraph residualGraph) {
         int bottleneckVal = Integer.MAX_VALUE;
@@ -186,11 +202,19 @@ class DirectedWeightedGraph {
     int graph[][];
     int numNodes;
 
+    /**
+     * Constructor to initialize all edge weights to 0 for the total number of nodes in the graph
+     * @param numNodes Total number of nodes in the graph
+     */
     DirectedWeightedGraph(int numNodes) {
         this.numNodes = numNodes;
         this.graph = new int[numNodes][numNodes];
     }
 
+    /**
+     * Constructor to initialize based on a 2 dimensional int array of edge weights
+     * @param graph Source graph to base the new DirectedWeightGraph object off of
+     */
     DirectedWeightedGraph(int[][] graph) {
         this.graph = graph;
         this.numNodes = graph[0].length;
