@@ -1,6 +1,5 @@
 import java.util.LinkedList;
 
-import jdk.internal.jshell.tool.resources.l10n;
 
 /**
  * @author Vincent Moeykens
@@ -25,29 +24,38 @@ class Main {
         dwGraph.addEdge(6, 2, 6);
         dwGraph.addEdge(6, 7, 10);
 
+        int s = 0;
+        int t = 7;
 
         FordFulkerson f = new FordFulkerson();
+
+        DirectedWeightedGraph outputResidualGraph = f.maxFlow(dwGraph, s, t);
+
+        int maxFlow = 0;
+
+        for (int i = 0; i < outputResidualGraph.getNumNodes(); i++) {
+            maxFlow += outputResidualGraph.getEdge(t, i);
+        }
  
-        System.out.println("The maximum possible flow is "
-                           + f.maxFlow(dwGraph, 0, 7));
+        System.out.println("Maximum flow value  = " + maxFlow);
     }
 }
 
 class FordFulkerson {
-    public int maxFlow(DirectedWeightedGraph G, int s, int t) {
+    public DirectedWeightedGraph maxFlow(DirectedWeightedGraph G, int s, int t) {
         // Construct the flow graph
         DirectedWeightedGraph flows = new DirectedWeightedGraph(G.getNumNodes());
         // Construct a residual graph
         DirectedWeightedGraph residualGraph = constructResidualGraph(G);
-        int totalFlow = 0;
         LinkedList<Integer> augmentingPath = findAugmentingPath(residualGraph, s, t);
         while (augmentingPath.peek() != -1) {
+            System.out.println(residualGraph);
             DirectedWeightedGraph flowsPrime = augment(flows, augmentingPath, residualGraph);
             updateResidualGraph(residualGraph, flows, flowsPrime);
             augmentingPath = findAugmentingPath(residualGraph, s, t);
         }
-
-        return 1;
+        
+        return residualGraph;
     }
 
     DirectedWeightedGraph constructResidualGraph(DirectedWeightedGraph graph) {
@@ -91,16 +99,17 @@ class FordFulkerson {
      * @return edge weight of the bottleneck
      */
     DirectedWeightedGraph augment(DirectedWeightedGraph flows, LinkedList<Integer> augmentingPath, DirectedWeightedGraph residualGraph) {
+        DirectedWeightedGraph newFlows = new DirectedWeightedGraph(flows.getNumNodes());
         int b = bottleneck(augmentingPath, residualGraph);
         for (int i = 0; i < augmentingPath.size() - 1; i++) {
             int currentEdgeWeight = residualGraph.getEdge(augmentingPath.get(i), augmentingPath.get(i + 1));
             if (currentEdgeWeight != 0) {
-                flows.modifyEdge(augmentingPath.get(i), augmentingPath.get(i + 1), b);
+                newFlows.modifyEdge(augmentingPath.get(i), augmentingPath.get(i + 1), b);
             } else {
-                flows.modifyEdge(augmentingPath.get(i), augmentingPath.get(i + 1), -b);
+                newFlows.modifyEdge(augmentingPath.get(i), augmentingPath.get(i + 1), -b);
             }
         }
-        return flows;
+        return newFlows;
     }
 
     /**
@@ -131,10 +140,6 @@ class FordFulkerson {
             for (int v = 0; v < graph.getNumNodes(); v++) {
                 if (visited[v] == false
                     && graph.getEdge(u, v) > 0) {
-                    // If we find a connection to the sink
-                    // node, then there is no point in BFS
-                    // anymore We just have to set its parent
-                    // and can return true
                     if (v == t) {
                         outputPath[v] = u;
                         pathExists = true;
@@ -214,4 +219,24 @@ class DirectedWeightedGraph {
     public int getNumNodes() {
         return this.numNodes;
     }
+
+
+    @Override
+    public String toString() {
+        String graphOutput = "";
+        int counter = 0;
+        for (int i = 0; i < this.getNumNodes(); i++) {
+            for (int j = 0; j < this.getNumNodes(); j++) {
+                if (this.getEdge(i, j) > 0 ) {
+                    graphOutput += ("(" + i + ", " + j + "): " + this.getEdge(i, j) + ", ");
+                    counter += 1;
+                    if (counter % 5 == 0) {
+                        graphOutput += "\n";
+                    }    
+                }
+            }
+        }
+        return graphOutput;
+    }
+
 }
