@@ -149,7 +149,6 @@ class FordFulkerson {
 
         boolean pathExists = false;
  
-        // Standard BFS Loop
         while (queue.size() != 0 && pathExists == false) {
             int u = queue.poll();
  
